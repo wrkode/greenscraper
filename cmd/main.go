@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 )
 
@@ -26,6 +27,15 @@ func ReadLinesFromFile(filename string) ([]string, error) {
 	}
 
 	return lines, scanner.Err()
+}
+
+func containsAnyOfKeywords(title string, keywords []string) bool {
+	for _, keyword := range keywords {
+		if contains := strings.Contains(title, keyword); contains {
+			return true
+		}
+	}
+	return false
 }
 
 func ProcessURL(url string, keywordRegexes []*regexp.Regexp, titleRegex *regexp.Regexp, wg *sync.WaitGroup) {
@@ -56,7 +66,7 @@ func ProcessURL(url string, keywordRegexes []*regexp.Regexp, titleRegex *regexp.
 			if len(titleMatch) > 1 {
 				title := titleMatch[1]
 
-				if len(title) >= 40 && !encounteredTitles[title] {
+				if len(title) >= 40 && !encounteredTitles[title] && !containsBadgePickUp(title) {
 					encounteredTitles[title] = true
 					talks = append(talks, "- "+title)
 				}
@@ -65,10 +75,14 @@ func ProcessURL(url string, keywordRegexes []*regexp.Regexp, titleRegex *regexp.
 	}
 
 	if len(talks) > 0 {
-		fmt.Println("Conference schedule link:", url)
+		fmt.Println("Schedule link:", url)
 		fmt.Println("Talks:")
 		for _, talk := range talks {
 			fmt.Println(talk)
 		}
 	}
+}
+
+func containsBadgePickUp(title string) bool {
+	return strings.Contains(strings.ToLower(title), "badge pick-up")
 }
